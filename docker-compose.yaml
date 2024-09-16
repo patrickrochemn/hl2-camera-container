@@ -15,7 +15,8 @@ services:
     depends_on:
       - nats-server
     environment:
+      - HOLOLENS_HOST=192.168.2.38  # Set the HoloLens host address here
       - NATS_URL=nats://nats-server:4222
     volumes:
-      - ./viewer:/app/viewer  # Mounts your Python script directory
+      - ./viewer:/app/viewer  # Mounts Python script directory
     restart: unless-stopped

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoloLens Stream Test</title>
+</head>
+<body>
+    <h1>WebSocket Connection Test</h1>
+    <p id="status">Connecting...</p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Connect to WebSocket server
+        const socket = io.connect('http://' + window.location.hostname + ':8080');
+
+        // Update status when connected
+        socket.on('connect', () => {
+            document.getElementById('status').textContent = 'Connected to WebSocket!';
+            console.log('Connected to WebSocket server');
+        });
+
+        // Handle disconnection
+        socket.on('disconnect', () => {
+            document.getElementById('status').textContent = 'Disconnected from WebSocket';
+        });
+    </script>
+</body>
+</html>

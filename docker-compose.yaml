@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  nats-server:
+    image: nats:latest
+    container_name: nats-server
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
+  hololens-stream:
+    build:
+      context: .  # Points to where your Dockerfile is located
+    container_name: hololens-stream
+    depends_on:
+      - nats-server
+    environment:
+      - NATS_URL=nats://nats-server:4222
+    volumes:
+      - ./viewer:/app/viewer  # Mounts your Python script directory
+    restart: unless-stopped

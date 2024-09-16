@@ -1,14 +1,16 @@
 FROM python:3.9-slim
 
-# Set the work directory
 WORKDIR /app
 
-# Install required packages
+# Install required Python packages
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Copy the Python script that gets the camera stream
+# Copy the viewer directory (which includes the webrtc publisher script and HL2SS library)
 COPY viewer /app/viewer
 
-# Run the Python script when the container starts
-CMD ["python", "/app/viewer/client_stream_pv.py"]
+# Expose any necessary ports (WebRTC doesn't need port exposure, but it's optional)
+EXPOSE 5000
+
+# Set the default command to run the WebRTC publisher
+CMD ["python", "/app/viewer/hololens_webrtc_publisher.py"]

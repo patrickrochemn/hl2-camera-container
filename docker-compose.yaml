@@ -1,30 +1,16 @@
 version: '3.8'
 
 services:
-  nats-server:
-    image: nats:latest
-    container_name: nats-server
+  web-server:
+    build:
+      context: ./web-server
+    container_name: webrtc-web-server
     ports:
-      - "4222:4222"
-      - "8222:8222"
+      - "8080:8080"  # WebRTC signaling and web client
 
   hololens-stream:
     build:
-      context: ./hololens-stream  # Separte directory for the hololens-stream container
-    container_name: hololens-stream
-    depends_on:
-      - nats-server
+      context: ./hololens-stream
+    container_name: hololens-webrtc-stream
     environment:
-      - HOLOLENS_HOST=192.168.2.38  # Set the HoloLens host address here
-      - NATS_URL=nats://nats-server:4222
-  
-  web-server:
-    build:
-      context: ./web-server  # Separte directory for the web-server container
-    container_name: hololens-web-server
-    depends_on:
-      - nats-server
-    ports:
-      - "8080:8080"
-    environment:
-      - NATS_URL=nats://nats-server:4222
+      - HOLOLENS_HOST=192.168.2.38  # Set your HoloLens IP here

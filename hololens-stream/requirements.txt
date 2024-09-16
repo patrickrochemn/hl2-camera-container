@@ -3,3 +3,4 @@ av
 nats-py
 Flask
 Flask-SocketIO
+aiortc

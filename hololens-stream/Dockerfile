@@ -1,16 +1,25 @@
 FROM python:3.9-slim
 
+# Install necessary libraries
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    && apt-get clean
+
+# Set up working directory
 WORKDIR /app
 
-# Install required Python packages
+# Copy the HL2SS Python script and required files
+COPY viewer /app/viewer
+
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Copy the viewer directory (which includes the webrtc publisher script and HL2SS library)
-COPY viewer /app/viewer
+# Expose RTSP port (default is 8554)
+EXPOSE 8554
 
-# Expose any necessary ports (WebRTC doesn't need port exposure, but it's optional)
-EXPOSE 5000
+# Set environment variables
+ENV HOLOLENS_HOST=192.168.2.38
 
-# Set the default command to run the WebRTC publisher
-CMD ["python", "/app/viewer/hololens_webrtc_publisher.py"]
+# Run the RTSP streaming script
+CMD ["python", "/app/viewer/hololens_rtsp_stream.py"]

@@ -1,16 +1,11 @@
 version: '3.8'
 
 services:
-  web-server:
-    build:
-      context: ./web-server
-    container_name: webrtc-web-server
-    ports:
-      - "8080:8080"  # WebRTC signaling and web client
-
   hololens-stream:
     build:
-      context: ./hololens-stream
-    container_name: hololens-webrtc-stream
+      context: ./hololens-stream  # Points to the directory with your Dockerfile and scripts
+    container_name: hololens-stream
     environment:
-      - HOLOLENS_HOST=192.168.2.38  # Set your HoloLens IP here
+      - HOLOLENS_HOST=192.168.2.38  # Update this with your HoloLens IP
+    ports:
+      - "8554:8554"  # Exposes the RTSP port

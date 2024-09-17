@@ -1,11 +1,19 @@
 version: '3.8'
 
 services:
-  hololens-stream:
-    build:
-      context: ./hololens-stream  # Points to the directory with your Dockerfile and scripts
-    container_name: hololens-stream
-    environment:
-      - HOLOLENS_HOST=192.168.2.38  # Update this with your HoloLens IP
+  rtsp-simple-server:
+    image: aler9/rtsp-simple-server
+    container_name: rtsp-server
     ports:
-      - "8554:8554"  # Exposes the RTSP port
+      - "8554:8554"  # RTSP Port
+    restart: unless-stopped
+
+  ffmpeg-stream:
+    build: .
+    container_name: ffmpeg-stream
+    depends_on:
+      - rtsp-simple-server
+    volumes:
+      - ./start_stream.sh:/app/start_stream.sh
+    restart: unless-stopped
+    command: /app/start_stream.sh

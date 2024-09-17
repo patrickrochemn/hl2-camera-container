@@ -1,6 +1,8 @@
 # Use Debian Slim for a lightweight base
 FROM debian:bullseye-slim
 
+WORKDIR /app
+
 # Install FFmpeg
 RUN apt-get update && \
     apt-get install -y ffmpeg && \
@@ -13,3 +15,6 @@ RUN chmod +x /app/start_stream.sh
 
 # Expose the RTSP port
 EXPOSE 8554
+
+# Run the stream script
+CMD ["/app/start_stream.sh"]

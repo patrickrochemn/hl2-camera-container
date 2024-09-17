@@ -6,14 +6,12 @@ services:
     container_name: rtsp-server
     ports:
       - "8554:8554"  # RTSP Port
-    restart: unless-stopped
 
   ffmpeg-stream:
-    build: .
+    build: .  # Build from the Dockerfile in the current directory
     container_name: ffmpeg-stream
     depends_on:
       - rtsp-simple-server
     volumes:
-      - ./start_stream.sh:/app/start_stream.sh
-    restart: unless-stopped
-    command: /app/start_stream.sh
+      - ./start_stream.sh:/app/start_stream.sh  # Ensure the script is mapped
+    command: /bin/bash /app/start_stream.sh  # Correct shell to run the script

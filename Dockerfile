@@ -1,17 +1,26 @@
+# Use Python as the base image since we need Python and FFmpeg
 FROM python:3.9-slim
 
-# Set the work directory
 WORKDIR /app
 
-# Install required packages
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# Install FFmpeg
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy the Python script that gets the camera stream
+# Copy the hl2ss directory and viewer files to the container
 COPY viewer /app/viewer
 
-# Expose port if necessary (optional, not required for NATS)
-EXPOSE 8080
+# Install Python dependencies (if any)
+# You can add a requirements.txt if needed, for now assuming hl2ss dependencies are already resolved
+RUN pip install numpy av opencv-python
 
-# Run the Python script when the container starts
-CMD ["python", "/app/viewer/client_stream_pv.py"]
+# Make the Python script executable
+RUN chmod +x /app/viewer/hl2ss_stream_to_ffmpeg.py
+
+# Expose the RTSP port (optional)
+EXPOSE 8554
+
+# Command to run the HoloLens stream script
+CMD ["python", "/app/viewer/hl2ss_stream_to_ffmpeg.py"]

@@ -30,6 +30,7 @@ def start_hololens_stream():
         '-flags', 'low_delay', # Enable low-latency mode
         '-i', '-',  # Input from stdin (H.264 stream)
         '-c:v', 'copy',  # No re-encoding
+        '-rtsp_transport', 'udp', # Trying UDP for lower latency
         '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens'  # Output to RTSP server
     ], stdin=subprocess.PIPE)
 

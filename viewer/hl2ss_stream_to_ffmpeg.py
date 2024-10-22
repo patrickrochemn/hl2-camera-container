@@ -3,6 +3,7 @@ import hl2ss_utilities
 import hl2ss
 import subprocess
 import threading
+import numpy as np
 
 # HoloLens connection settings
 HOLOLENS_HOST = "192.168.2.38"  # Update with your HoloLens IP
@@ -15,7 +16,7 @@ AUDIO_PORT = hl2ss.StreamPort.MICROPHONE
 # Audio settings
 AUDIO_CHANNELS = hl2ss.Parameters_MICROPHONE.CHANNELS
 AUDIO_SAMPLE_RATE = hl2ss.Parameters_MICROPHONE.SAMPLE_RATE
-audio_profile = hl2ss.AudioProfile.AAC_24000
+audio_profile = hl2ss.AudioProfile.RAW
 
 def start_hololens_stream():
     try:
@@ -39,10 +40,12 @@ def start_hololens_stream():
         # Setup FFmpeg to handle both video and audio inputs, and output to RTSP
         ffmpeg_process = subprocess.Popen([
             'ffmpeg', '-re',
+            '-thread_queue_size', '512',  # Increase thread queue size
             '-f', 'h264',  # Video input format
             '-fflags', 'nobuffer',
             '-flags', 'low_delay',
             '-i', '-',  # Video input from stdin
+            '-thread_queue_size', '512',  # Increase thread queue size for audio
             '-f', 'f32le' if audio_profile != hl2ss.AudioProfile.RAW else 's16le',  # Audio input format
             '-ar', str(AUDIO_SAMPLE_RATE),
             '-ac', str(AUDIO_CHANNELS),
@@ -55,10 +58,13 @@ def start_hololens_stream():
 
         def stream_video():
             try:
+                timestamp = 0
                 while True:
                     data = video_client.get_next_packet()
                     if data.payload is not None:
+                        # Add timestamp to video packet
                         ffmpeg_process.stdin.write(data.payload)
+                        timestamp += 1
             except Exception as e:
                 print(f"Video stream error: {e}")
             finally:
@@ -71,7 +77,9 @@ def start_hololens_stream():
                     if data.payload is not None:
                         # Convert AAC planar format to packed format if needed
                         audio = hl2ss_utilities.microphone_planar_to_packed(data.payload) if audio_profile != hl2ss.AudioProfile.RAW else data.payload
-                        audio_bytes = audio.tobytes()
+                        audio = np.nan_to_num(audio)  # Replace NaN/Inf values with 0
+                        # audio_bytes = audio.tobytes()
+                        audio_bytes = audio
                         ffmpeg_process.stdin.write(audio_bytes)
             except Exception as e:
                 print(f"Audio stream error: {e}")

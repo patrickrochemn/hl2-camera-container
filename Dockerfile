@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install FFmpeg
 RUN apt-get update && \
-    apt-get install -y ffmpeg && \
+    apt-get install -y ffmpeg gcc libasound2-dev portaudio19-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -14,7 +14,7 @@ COPY viewer /app/viewer
 
 # Install Python dependencies (if any)
 # You can add a requirements.txt if needed, for now assuming hl2ss dependencies are already resolved
-RUN pip install numpy av opencv-python nats-py
+RUN pip install numpy av opencv-python nats-py pyaudio
 
 # Make the Python script executable
 RUN chmod +x /app/viewer/hl2ss_stream_to_ffmpeg.py

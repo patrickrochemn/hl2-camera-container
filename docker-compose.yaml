@@ -12,7 +12,6 @@ services:
     container_name: ffmpeg-hololens-stream
     depends_on:
       - rtsp-simple-server
-    volumes:
-      - ./hl2ss:/app/hl2ss  # Mount hl2ss directory
     environment:
       - HOLOLENS_HOST=192.168.2.38  # Set your HoloLens IP here
+

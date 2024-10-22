@@ -14,7 +14,7 @@ COPY viewer /app/viewer
 
 # Install Python dependencies (if any)
 # You can add a requirements.txt if needed, for now assuming hl2ss dependencies are already resolved
-RUN pip install numpy av opencv-python
+RUN pip install numpy av opencv-python nats-py
 
 # Make the Python script executable
 RUN chmod +x /app/viewer/hl2ss_stream_to_ffmpeg.py
@@ -24,3 +24,4 @@ EXPOSE 8554
 
 # Command to run the HoloLens stream script
 CMD ["python", "/app/viewer/hl2ss_stream_to_ffmpeg.py"]
+

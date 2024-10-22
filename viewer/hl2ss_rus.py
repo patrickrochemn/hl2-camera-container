@@ -1,7 +1,5 @@
-
 import struct
 import hl2ss
-
 
 # 3D Primitive Types
 class PrimitiveType:
@@ -12,18 +10,15 @@ class PrimitiveType:
     Plane = 4
     Quad = 5
 
-
 # Server Target Mode
 class TargetMode:
     UseID = 0
     UseLast = 1
 
-
 # Object Active State
 class ActiveState:
     Inactive = 0
     Active = 1
-
 
 #------------------------------------------------------------------------------
 # Commands
@@ -51,6 +46,33 @@ class command_buffer(hl2ss.umq_command_buffer):
     def create_text(self): 
         self.add(6, b'')
 
+    def create_interactable_text(self):
+        self.add(21, b'')
+
+    def set_interactable_text(self, key, text):
+        self.__commands.append([22, struct.pack('<I', key) + text.encode('utf-8')])
+    
+    def create_arrow(self):
+        self.add(23, b'')
+    
+    def set_arrow_transform(self, key, position, rotation, scale):
+        data = bytearray()
+        data.extend(struct.pack('I', key))
+
+    def set_arrow_transform(self, key, position, rotation, scale):
+        data = bytearray()
+        data.extend(struct.pack('I', key))
+        data.extend(struct.pack('fff', *position))
+        data.extend(struct.pack('ffff', *rotation))
+        data.extend(struct.pack('fff', *scale))
+        self.add(25, data)
+    
+    def toggle_object_visibility(self, key, visible):
+        data = bytearray()
+        data.extend(struct.pack('I', key))
+        data.extend(struct.pack('I', 1 if visible else 0))
+        self.add(24, data)
+
     def set_text(self, key, font_size, rgba, string):
         self.add(7, struct.pack('<Ifffff', key, font_size, rgba[0], rgba[1], rgba[2], rgba[3]) + string.encode('utf-8'))
 
@@ -74,19 +96,3 @@ class command_buffer(hl2ss.umq_command_buffer):
 
     def set_target_mode(self, mode):
         self.add(20, struct.pack('<I', mode))
-
-    def debug_try_lock_pv(self):
-        self.add(0xFFFFFF00, b'')
-
-    def debug_unlock_pv(self):
-        self.add(0xFFFFFF01, b'')
-
-    def debug_try_lock_ev(self):
-        self.add(0xFFFFFF02, b'')
-
-    def debug_unlock_ev(self):
-        self.add(0xFFFFFF03, b'')
-
-    def debug_message(self, text):
-        self.add(0xFFFFFFFE, text.encode('utf-8'))
-

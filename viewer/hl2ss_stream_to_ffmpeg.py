@@ -3,13 +3,12 @@ import hl2ss_utilities
 import hl2ss
 import subprocess
 import threading
-import numpy as np
 
 # HoloLens connection settings
-HOLOLENS_HOST = "192.168.2.38"  # Update with your HoloLens IP
+HOLOLENS_HOST = "192.168.2.38"
 VIDEO_PORT = hl2ss.StreamPort.PERSONAL_VIDEO
-WIDTH = 1280  # Known width of the HoloLens stream
-HEIGHT = 720  # Known height of the HoloLens stream
+WIDTH = 1280
+HEIGHT = 720
 FRAMERATE = 30
 AUDIO_PORT = hl2ss.StreamPort.MICROPHONE
 
@@ -18,7 +17,7 @@ AUDIO_CHANNELS = hl2ss.Parameters_MICROPHONE.CHANNELS
 AUDIO_SAMPLE_RATE = hl2ss.Parameters_MICROPHONE.SAMPLE_RATE
 audio_profile = hl2ss.AudioProfile.RAW
 
-def start_hololens_stream():
+def start_video_stream():
     try:
         # Start video subsystem
         hl2ss_lnm.start_subsystem_pv(HOLOLENS_HOST, VIDEO_PORT, enable_mrc=True, shared=False)
@@ -31,76 +30,64 @@ def start_hololens_stream():
         )
         video_client.open()
 
+        # FFmpeg process for video
+        ffmpeg_video = subprocess.Popen([
+            'ffmpeg', '-re',
+            '-f', 'h264',
+            '-i', '-',  # Video input from stdin
+            '-c:v', 'copy',
+            '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens_video'
+        ], stdin=subprocess.PIPE)
+
+        # Send video frames to FFmpeg
+        while True:
+            data = video_client.get_next_packet()
+            if data.payload is not None:
+                ffmpeg_video.stdin.write(data.payload)
+
+    except Exception as e:
+        print(f"Video stream error: {e}")
+    finally:
+        video_client.close()
+
+def start_audio_stream():
+    try:
         # Setup HL2SS audio client
         audio_client = hl2ss_lnm.rx_microphone(
             HOLOLENS_HOST, AUDIO_PORT, profile=audio_profile
         )
         audio_client.open()
 
-        # Setup FFmpeg to handle both video and audio inputs, and output to RTSP
-        ffmpeg_process = subprocess.Popen([
+        # FFmpeg process for audio
+        ffmpeg_audio = subprocess.Popen([
             'ffmpeg', '-re',
-            '-thread_queue_size', '512',  # Increase thread queue size
-            '-f', 'h264',  # Video input format
-            '-fflags', 'nobuffer',
-            '-flags', 'low_delay',
-            '-i', '-',  # Video input from stdin
-            '-thread_queue_size', '512',  # Increase thread queue size for audio
-            '-f', 'f32le' if audio_profile != hl2ss.AudioProfile.RAW else 's16le',  # Audio input format
+            '-f', 's16le',
             '-ar', str(AUDIO_SAMPLE_RATE),
             '-ac', str(AUDIO_CHANNELS),
             '-i', '-',  # Audio input from stdin
-            '-c:v', 'copy',  # No re-encoding for video
-            '-c:a', 'aac',  # Encode audio to AAC for RTSP
-            '-rtsp_transport', 'udp',
-            '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens'  # RTSP output URL
+            '-c:a', 'aac',
+            '-b:a', '64k',
+            '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens_audio'
         ], stdin=subprocess.PIPE)
 
-        def stream_video():
-            try:
-                timestamp = 0
-                while True:
-                    data = video_client.get_next_packet()
-                    if data.payload is not None:
-                        # Add timestamp to video packet
-                        ffmpeg_process.stdin.write(data.payload)
-                        timestamp += 1
-            except Exception as e:
-                print(f"Video stream error: {e}")
-            finally:
-                video_client.close()
-
-        def stream_audio():
-            try:
-                while True:
-                    data = audio_client.get_next_packet()
-                    if data.payload is not None:
-                        # Convert AAC planar format to packed format if needed
-                        audio = hl2ss_utilities.microphone_planar_to_packed(data.payload) if audio_profile != hl2ss.AudioProfile.RAW else data.payload
-                        audio = np.nan_to_num(audio)  # Replace NaN/Inf values with 0
-                        # audio_bytes = audio.tobytes()
-                        audio_bytes = audio
-                        ffmpeg_process.stdin.write(audio_bytes)
-            except Exception as e:
-                print(f"Audio stream error: {e}")
-            finally:
-                audio_client.close()
-
-        # Start separate threads for video and audio streaming
-        video_thread = threading.Thread(target=stream_video)
-        audio_thread = threading.Thread(target=stream_audio)
-
-        video_thread.start()
-        audio_thread.start()
-
-        video_thread.join()
-        audio_thread.join()
-
-        ffmpeg_process.stdin.close()
-        ffmpeg_process.wait()
+        # Send audio frames to FFmpeg
+        while True:
+            data = audio_client.get_next_packet()
+            if data.payload is not None:
+                audio_bytes = data.payload.tobytes()
+                ffmpeg_audio.stdin.write(audio_bytes)
 
     except Exception as e:
-        print(f"HoloLens connection failed: {e}")
+        print(f"Audio stream error: {e}")
+    finally:
+        audio_client.close()
 
 if __name__ == "__main__":
-    start_hololens_stream()
+    video_thread = threading.Thread(target=start_video_stream)
+    audio_thread = threading.Thread(target=start_audio_stream)
+
+    video_thread.start()
+    audio_thread.start()
+
+    video_thread.join()
+    audio_thread.join()

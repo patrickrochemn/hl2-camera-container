@@ -65,6 +65,7 @@ def start_audio_stream():
             '-ar', str(AUDIO_SAMPLE_RATE),
             '-ac', str(AUDIO_CHANNELS),
             '-i', '-',  # Audio input from stdin
+            '-filter:a', 'volume=4.0',
             '-c:a', 'aac',
             '-b:a', '64k',
             '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens_audio'

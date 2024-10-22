@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   rtsp-simple-server:
     image: aler9/rtsp-simple-server

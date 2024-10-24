@@ -1,8 +1,8 @@
 import hl2ss_lnm
+import hl2ss_utilities
 import hl2ss
 import subprocess
 import threading
-import time
 
 # HoloLens connection settings
 HOLOLENS_HOST = "192.168.2.38"
@@ -36,7 +36,6 @@ def start_video_stream():
             '-f', 'h264',
             '-i', '-',  # Video input from stdin
             '-c:v', 'copy',
-            '-reset_timestamps', '1',
             '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens_video'
         ], stdin=subprocess.PIPE)
 
@@ -69,7 +68,6 @@ def start_audio_stream():
             '-filter:a', 'volume=4.0',
             '-c:a', 'aac',
             '-b:a', '64k',
-            '-reset_timestamps', '1',
             '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens_audio'
         ], stdin=subprocess.PIPE)
 
@@ -85,38 +83,12 @@ def start_audio_stream():
     finally:
         audio_client.close()
 
-def combine_streams():
-    try:
-        # Wait for a longer time to ensure both streams are live
-        time.sleep(10)
-
-        # FFmpeg process to combine video and audio streams
-        ffmpeg_combined = subprocess.Popen([
-            'ffmpeg',
-            '-i', 'rtsp://rtsp-server:8554/hololens_video',
-            '-i', 'rtsp://rtsp-server:8554/hololens_audio',
-            '-c:v', 'copy', '-c:a', 'aac',
-            '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens_combined'
-        ])
-
-        # Keep the process running
-        ffmpeg_combined.wait()
-    except Exception as e:
-        print(f"Combined stream error: {e}")
-
 if __name__ == "__main__":
     video_thread = threading.Thread(target=start_video_stream)
     audio_thread = threading.Thread(target=start_audio_stream)
 
-    # Start the video and audio streams
     video_thread.start()
     audio_thread.start()
-
-    # Give more time for the individual streams to start
-    time.sleep(10)
-
-    # Start the combined stream
-    combine_streams()
 
     video_thread.join()
     audio_thread.join()

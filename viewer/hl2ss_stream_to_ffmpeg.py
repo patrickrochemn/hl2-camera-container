@@ -36,7 +36,7 @@ def start_video_stream():
             '-f', 'h264',
             '-i', '-',  # Video input from stdin
             '-c:v', 'copy',
-            '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens_video'
+            '-f', 'rtsp', 'rtsp://192.168.9.10:8554/hololens_video'
         ], stdin=subprocess.PIPE)
 
         # Send video frames to FFmpeg
@@ -68,7 +68,7 @@ def start_audio_stream():
             '-filter:a', 'volume=4.0',
             '-c:a', 'aac',
             '-b:a', '64k',
-            '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens_audio'
+            '-f', 'rtsp', 'rtsp://192.168.9.10:8554/hololens_audio'
         ], stdin=subprocess.PIPE)
 
         # Send audio frames to FFmpeg

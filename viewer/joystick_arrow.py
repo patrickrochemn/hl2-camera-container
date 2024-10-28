@@ -59,6 +59,15 @@ def apply_message_data(data):
             delta_position[2] -= move_increment
             update_needed = True
 
+    # New elevation control
+    if 'elevation' in data:
+        if data['elevation'] > 0.9:  # Move up
+            delta_position[1] += move_increment
+            update_needed = True
+        elif data['elevation'] < -0.9:  # Move down
+            delta_position[1] -= move_increment
+            update_needed = True
+
 async def nats_subscriber():
     """NATS subscriber to listen for joystick input."""
     nc = NATS()
@@ -110,7 +119,7 @@ def hologram_thread():
             else:
                 print("Setting inactive")
                 display_list.set_active(key, hl2ss_rus.ActiveState.Inactive)
-            # display_list.set_active(key, hl2ss_rus.ActiveState.Active if pointer_visible else hl2ss_rus.ActiveState.Inactive)
+
             display_list.end_display_list()
             ipc.push(display_list)
             results = ipc.pull(display_list)

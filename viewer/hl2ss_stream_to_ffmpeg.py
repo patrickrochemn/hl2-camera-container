@@ -11,6 +11,7 @@ WIDTH = 1280
 HEIGHT = 720
 FRAMERATE = 30
 AUDIO_PORT = hl2ss.StreamPort.MICROPHONE
+RIGHT_FRONT_CAMERA_PORT = hl2ss.StreamPort.RM_VLC_RIGHTFRONT  # Right front camera port
 
 # Audio settings
 AUDIO_CHANNELS = hl2ss.Parameters_MICROPHONE.CHANNELS
@@ -83,12 +84,46 @@ def start_audio_stream():
     finally:
         audio_client.close()
 
+def start_right_front_camera_stream():
+    try:
+        # Setup HL2SS right front VLC camera client
+        vlc_client = hl2ss_lnm.rx_rm_vlc(
+            HOLOLENS_HOST, RIGHT_FRONT_CAMERA_PORT, mode=hl2ss.StreamMode.MODE_1
+        )
+        vlc_client.open()
+
+        # FFmpeg process for right front camera stream
+        ffmpeg_vlc = subprocess.Popen([
+            'ffmpeg', '-re',
+            '-f', 'rawvideo',
+            '-pixel_format', 'gray',
+            '-video_size', '640x480',
+            '-framerate', '30',
+            '-i', '-',  # Video input from stdin
+            '-c:v', 'copy',
+            '-f', 'rtsp', 'rtsp://rtsp-server:8554/hololens_vlc'
+        ], stdin=subprocess.PIPE)
+
+        # Send VLC frames to FFmpeg
+        while True:
+            data = vlc_client.get_next_packet()
+            if data.payload is not None:
+                ffmpeg_vlc.stdin.write(data.payload)
+
+    except Exception as e:
+        print(f"Right front camera stream error: {e}")
+    finally:
+        vlc_client.close()
+
 if __name__ == "__main__":
     video_thread = threading.Thread(target=start_video_stream)
     audio_thread = threading.Thread(target=start_audio_stream)
+    vlc_thread = threading.Thread(target=start_right_front_camera_stream)
 
     video_thread.start()
     audio_thread.start()
+    vlc_thread.start()
 
     video_thread.join()
     audio_thread.join()
+    vlc_thread.join()
